@@ -3,6 +3,7 @@ set -e
 
 PACKAGE="fk-config-service-confd"
 SERVICE=/etc/service/$PACKAGE
+CONFD="/usr/share/$PACKAGE/bin/confd -onetime"
 
 case $1 in
   start)
@@ -19,6 +20,9 @@ case $1 in
     svstat $SERVICE
     #healthcheck || (echo 'healthcheck failed' && false)
     ;;
+  init)
+   $CONFD 
+   ;;
   shell)
 	exec setuidgid $PACKAGE bash
 	;;
