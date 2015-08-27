@@ -5,3 +5,4 @@ dest = "/tmp/confd-iteration-test.conf"
 keys = [
   "/upstream",
 ]
+reload_cmd = "ls"

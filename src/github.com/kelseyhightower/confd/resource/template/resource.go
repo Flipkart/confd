@@ -28,6 +28,7 @@ type Config struct {
 	Prefix        string
 	StoreClient   backends.StoreClient
 	TemplateDir   string
+	ReloadCmdMarkerDir string
 }
 
 // TemplateResourceConfig holds the parsed template resource.
@@ -55,10 +56,10 @@ type TemplateResource struct {
 	prefix        string
 	store         memkv.Store
 	storeClient   backends.StoreClient
+	reloadCmdMarkerDir string
 }
 
 var ErrEmptySrc = errors.New("empty src template")
-const RELOAD_CMD_MARKER_PATH = "/var/lib/confd/"
 
 // NewTemplateResource creates a TemplateResource.
 func NewTemplateResource(path string, config Config) (*TemplateResource, error) {
@@ -83,6 +84,7 @@ func NewTemplateResource(path string, config Config) (*TemplateResource, error) 
 		return nil, ErrEmptySrc
 	}
 	tr.Src = filepath.Join(config.TemplateDir, tr.Src)
+	tr.reloadCmdMarkerDir = config.ReloadCmdMarkerDir
 	return &tr, nil
 }
 
@@ -206,7 +208,7 @@ func (t *TemplateResource) sync() error {
 			}
 
 			if !reloadedOk {
-				err := t.createReloadCmdMarkerFile()
+				err := t.reloadAndCreateMarker()
 				if err != nil {
 					log.Error(err.Error())
 				}
@@ -235,10 +237,11 @@ func (t *TemplateResource) createReloadCmdMarkerFile() error {
 	if err != nil {
 		return err
 	}
-	os.MkdirAll(RELOAD_CMD_MARKER_PATH, os.FileMode(0755))
-	err = ioutil.WriteFile(t.reloadCmdMarkerFilePath(), contents, t.FileMode)
+	reloadMarkerFilePath := t.reloadCmdMarkerFilePath()
+	log.Debug("Reload Comamnd Marker " + reloadMarkerFilePath)
+	err = ioutil.WriteFile(reloadMarkerFilePath, contents, t.FileMode)
 	// make sure owner and group match the temp file, in case the file was created with WriteFile
-	os.Chown(t.Dest, t.Uid, t.Gid)
+	os.Chown(reloadMarkerFilePath, t.Uid, t.Gid)
 	if err != nil {
 		return err
 	}
@@ -299,13 +302,13 @@ func (t *TemplateResource) reloadWithRetry() {
 }
 
 func (t *TemplateResource) reloadCmdMarkerName() string {
-	trimedString := strings.TrimPrefix(t.Prefix + t.Src + t.Dest, "/")
-	replacedString := strings.Replace(trimedString, ".", "_", -1)
+	trimmedString := strings.TrimPrefix(t.Prefix + t.Src + t.Dest, "/")
+	replacedString := strings.Replace(trimmedString, ".", "_", -1)
 	return strings.Replace(replacedString, "/", "_", -1)
 }
 
 func (t *TemplateResource) reloadCmdMarkerFilePath() string {
-	return RELOAD_CMD_MARKER_PATH + t.reloadCmdMarkerName()
+	return t.reloadCmdMarkerDir + "/" + t.reloadCmdMarkerName()
 }
 
 // process is a convenience function that wraps calls to the three main tasks

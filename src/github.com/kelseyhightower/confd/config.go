@@ -40,6 +40,7 @@ var (
 	templateConfig    template.Config
 	backendsConfig    backends.Config
 	watch             bool
+	reloadCmdMarkerDir string
 )
 
 // A Config structure is used to configure confd.
@@ -58,6 +59,7 @@ type Config struct {
 	Table        string   `toml:"table"`
 	LogLevel     string   `toml:"log-level"`
 	Watch        bool     `toml:"watch"`
+	ReloadCmdMarkerDir string `toml:"reload_cmd_marker_dir`
 }
 
 func init() {
@@ -79,6 +81,7 @@ func init() {
 	flag.StringVar(&srvDomain, "srv-domain", "", "the name of the resource record")
 	flag.StringVar(&table, "table", "", "the name of the DynamoDB table (only used with -backend=dynamodb)")
 	flag.BoolVar(&watch, "watch", false, "enable watch support")
+	flag.StringVar(&reloadCmdMarkerDir, "reload_cmd_marker_dir", "/var/lib/confd", "indicates successful execution of reload command")
 }
 
 // initConfig initializes the confd configuration by first setting defaults,
@@ -99,6 +102,7 @@ func initConfig() error {
 		Interval: 600,
 		Prefix:   "/",
 		Scheme:   "http",
+		ReloadCmdMarkerDir: "/var/lib/confd",
 	}
 	// Update config from the TOML configuration file.
 	if configFile == "" {
@@ -186,6 +190,7 @@ func initConfig() error {
 		Noop:          config.Noop,
 		Prefix:        config.Prefix,
 		TemplateDir:   filepath.Join(config.ConfDir, "templates"),
+		ReloadCmdMarkerDir: config.ReloadCmdMarkerDir,
 	}
 	return nil
 }
@@ -258,5 +263,7 @@ func setConfigFromFlag(f *flag.Flag) {
 		config.LogLevel = logLevel
 	case "watch":
 		config.Watch = watch
+	case "reload_cmd_marker_dir":
+		config.ReloadCmdMarkerDir = reloadCmdMarkerDir
 	}
 }

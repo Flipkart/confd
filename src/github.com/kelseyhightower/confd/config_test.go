@@ -22,6 +22,7 @@ func TestInitConfigDefaultConfig(t *testing.T) {
 		SRVDomain:    "",
 		Scheme:       "http",
 		Table:        "",
+		ReloadCmdMarkerDir: "/var/lib/confd",
 	}
 	if err := initConfig(); err != nil {
 		t.Errorf(err.Error())

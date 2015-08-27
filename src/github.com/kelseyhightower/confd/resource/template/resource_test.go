@@ -38,6 +38,7 @@ dest = "{{.dest}}"
 keys = [
   "foo",
 ]
+reload_cmd = "ls"
 `
 
 func TestProcessTemplateResources(t *testing.T) {
@@ -91,6 +92,7 @@ func TestProcessTemplateResources(t *testing.T) {
 		ConfigDir:   filepath.Join(tempConfDir, "conf.d"),
 		StoreClient: storeClient,
 		TemplateDir: filepath.Join(tempConfDir, "templates"),
+		ReloadCmdMarkerDir: "/var/lib/confd",
 	}
 	// Process the test template resource.
 	err = Process(c)
@@ -106,6 +108,15 @@ func TestProcessTemplateResources(t *testing.T) {
 	if string(results) != expected {
 		t.Errorf("Expected contents of dest == '%s', got %s", expected, string(results))
 	}
+
+	resourceCmdMarker, err := ioutil.ReadFile("/var/lib/confd/var_folders_g0_072gc5hn299brqp7l07k9hxsw00w9x_T_249323830_templates_foo_tmpl_var_folders_g0_072gc5hn299brqp7l07k9hxsw00w9x_T_252091677")
+	if err != nil {
+		t.Error(err.Error())
+	}
+	if string(resourceCmdMarker) != expected {
+		t.Errorf("Expected contents of reload command marker == '%s', got %s", expected, string(resourceCmdMarker))
+	}
+
 }
 
 func TestSameConfigTrue(t *testing.T) {
