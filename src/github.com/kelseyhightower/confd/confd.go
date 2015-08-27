@@ -10,9 +10,14 @@ import (
 	"github.com/kelseyhightower/confd/backends"
 	"github.com/kelseyhightower/confd/log"
 	"github.com/kelseyhightower/confd/resource/template"
+	_ "net/http/pprof"
+	"net/http"
 )
 
 func main() {
+	go func() {
+		log.Info(fmt.Sprint(http.ListenAndServe("0.0.0.0:8801", nil)))
+	}()
 	flag.Parse()
 	if printVersion {
 		fmt.Printf("confd %s\n", Version)

@@ -100,6 +100,7 @@ func (this *DynamicBucket) DeleteBucket() {
 
 //Disconnected callback.
 func (this *DynamicBucket) Disconnected(err error) {
+	this.lock.RLock(); defer this.lock.RUnlock()
 	if (this.isConnected()) {
 		this.SetLastChecked(time.Now().Unix())
 		for _, listener := range this.listeners {
@@ -110,6 +111,7 @@ func (this *DynamicBucket) Disconnected(err error) {
 
 //Connected callback.
 func (this *DynamicBucket) Connected() {
+	this.lock.RLock(); defer this.lock.RUnlock()
 	if (!this.isConnected()) {
 		this.SetLastChecked(-1)
 		for _, listener := range this.listeners {
