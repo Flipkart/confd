@@ -16,7 +16,7 @@ import (
 
 func main() {
 	go func() {
-		log.Info(fmt.Sprint(http.ListenAndServe("0.0.0.0:8801", nil)))
+		log.Info(fmt.Sprint(http.ListenAndServe("localhost:8801", nil)))
 	}()
 	flag.Parse()
 	if printVersion {
