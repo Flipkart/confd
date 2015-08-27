@@ -17,6 +17,7 @@ import (
 	"github.com/kelseyhightower/confd/backends"
 	"github.com/kelseyhightower/confd/log"
 	"github.com/kelseyhightower/memkv"
+	"time"
 )
 
 type Config struct {
@@ -57,6 +58,7 @@ type TemplateResource struct {
 }
 
 var ErrEmptySrc = errors.New("empty src template")
+const RELOAD_CMD_MARKER_PATH = "/var/lib/confd/"
 
 // NewTemplateResource creates a TemplateResource.
 func NewTemplateResource(path string, config Config) (*TemplateResource, error) {
@@ -190,13 +192,55 @@ func (t *TemplateResource) sync() error {
 			}
 		}
 		if t.ReloadCmd != "" {
-			if err := t.reload(); err != nil {
-				return err
+			err := t.reloadAndCreateMarker()
+			if err != nil {
+				log.Error(err.Error())
 			}
 		}
 		log.Info("Target config " + t.Dest + " has been updated")
 	} else {
+		if t.ReloadCmd != "" {
+			reloadedOk, err := sameConfig(t.Dest, t.reloadCmdMarkerFilePath())
+			if err != nil {
+				log.Error(err.Error())
+			}
+
+			if !reloadedOk {
+				err := t.createReloadCmdMarkerFile()
+				if err != nil {
+					log.Error(err.Error())
+				}
+			} else {
+				log.Debug("Reload command already ran for the dest file")
+			}
+		}
 		log.Debug("Target config " + t.Dest + " in sync")
+	}
+	return nil
+}
+
+func (t *TemplateResource) reloadAndCreateMarker() error {
+	t.reloadWithRetry()
+	log.Debug("Reload command executed successfully")
+	err := t.createReloadCmdMarkerFile()
+	if err != nil {
+		return err
+	}
+	log.Debug("Created Reload Marker file successfully")
+	return nil
+}
+
+func (t *TemplateResource) createReloadCmdMarkerFile() error {
+	contents, err := ioutil.ReadFile(t.Dest)
+	if err != nil {
+		return err
+	}
+	os.MkdirAll(RELOAD_CMD_MARKER_PATH, os.FileMode(0755))
+	err = ioutil.WriteFile(t.reloadCmdMarkerFilePath(), contents, t.FileMode)
+	// make sure owner and group match the temp file, in case the file was created with WriteFile
+	os.Chown(t.Dest, t.Uid, t.Gid)
+	if err != nil {
+		return err
 	}
 	return nil
 }
@@ -241,6 +285,27 @@ func (t *TemplateResource) reload() error {
 	}
 	log.Debug(fmt.Sprintf("%q", string(output)))
 	return nil
+}
+
+// Keep trying to execute reload command till
+// it exits with one
+func (t *TemplateResource) reloadWithRetry() {
+	for {
+		if err := t.reload(); err == nil {
+			return;
+		}
+		time.Sleep(time.Second * 20)
+	}
+}
+
+func (t *TemplateResource) reloadCmdMarkerName() string {
+	trimedString := strings.TrimPrefix(t.Prefix + t.Src + t.Dest, "/")
+	replacedString := strings.Replace(trimedString, ".", "_", -1)
+	return strings.Replace(replacedString, "/", "_", -1)
+}
+
+func (t *TemplateResource) reloadCmdMarkerFilePath() string {
+	return RELOAD_CMD_MARKER_PATH + t.reloadCmdMarkerName()
 }
 
 // process is a convenience function that wraps calls to the three main tasks
