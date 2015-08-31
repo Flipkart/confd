@@ -94,7 +94,7 @@ func (this *DynamicBucket) RemoveListeners(listener BucketUpdatesListener) {
 func (this *DynamicBucket) DeleteBucket() {
 	this.lock.RLock(); defer this.lock.RUnlock()
 	for _, listener := range this.listeners {
-		listener.Deleted(this.GetMeta().GetName())
+		listener.Deleted(this.getMetaWithoutLock().GetName())
 	}
 }
 
@@ -104,7 +104,7 @@ func (this *DynamicBucket) Disconnected(err error) {
 	if (this.isConnected()) {
 		this.SetLastChecked(time.Now().Unix())
 		for _, listener := range this.listeners {
-			listener.Disconnected(this.GetMeta().GetName(), err)
+			listener.Disconnected(this.getMetaWithoutLock().GetName(), err)
 		}
 	}
 }
@@ -115,12 +115,15 @@ func (this *DynamicBucket) Connected() {
 	if (!this.isConnected()) {
 		this.SetLastChecked(-1)
 		for _, listener := range this.listeners {
-			listener.Connected(this.GetMeta().GetName())
+			listener.Connected(this.getMetaWithoutLock().GetName())
 		}
 	}
 
 }
 
+func (this *DynamicBucket) getMetaWithoutLock() *BucketMetaData {
+	return this.bucket.Meta
+}
 //Checks if watch is connected or not
 func (this *DynamicBucket) isConnected() bool {
 	if (this.GetLastChecked() == -1)  {

@@ -47,7 +47,7 @@ const LATEST_VERSION = -1
 func NewConfigServiceClient(url string, cacheSize int) (*ConfigServiceClient,error) {
 
     client := &ConfigServiceClient{}
-    httpClient,err := NewHttpClient(&http.Client{Timeout: time.Duration(60 * time.Second)}, url)
+    httpClient,err := NewHttpClient(&http.Client{Timeout: time.Duration(300 * time.Second)}, url)
     if err != nil {
         return nil, err
     }

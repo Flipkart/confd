@@ -293,7 +293,7 @@ func (t *TemplateResource) reload() error {
 // Keep trying to execute reload command till
 // it exits with one
 func (t *TemplateResource) reloadWithRetry() {
-	for {
+	for i:= 0; i < 10; i++ {
 		if err := t.reload(); err == nil {
 			return;
 		}
