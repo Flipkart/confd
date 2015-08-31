@@ -27,7 +27,6 @@ type watchResponse struct {
 
 func (this *BucketListener) Connected(bucketName string) {
 	log.Info("Connected! " + bucketName)
-	this.watchResp <- &watchResponse{waitIndex:this.currentIndex+1, err: nil}
 }
 
 func (this *BucketListener) Disconnected(bucketName string, err error) {
