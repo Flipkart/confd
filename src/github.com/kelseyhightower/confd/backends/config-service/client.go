@@ -132,7 +132,7 @@ func (c *Client) WatchPrefix(prefix string, waitIndex uint64, stopChan chan bool
 	if waitIndex == 0 {
 		return waitIndex+1, nil
 	}  else {
-		watchResp := make(chan *watchResponse)
+		watchResp := make(chan *watchResponse, len(dynamicBuckets))
 		bucketListener := &BucketListener{watchResp: watchResp, currentIndex: waitIndex}
 		setupDynamicBucketListeners(dynamicBuckets, bucketListener)
 		select {
