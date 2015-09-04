@@ -18,20 +18,26 @@ echo "DEB: $DEB"
 
 echo "=============== Building! ==================="
 
-echo "Installing go"
 pushd /tmp 
 
-	rm -rf /tmp/go
-	wget http://storage.googleapis.com/golang/go1.5.linux-amd64.tar.gz &> /dev/null
-	tar xf go1.5.linux-amd64.tar.gz 
+	echo "Installing go"
+	if [ ! -d go ]; then
+		wget http://storage.googleapis.com/golang/go1.5.linux-amd64.tar.gz &> /dev/null
+		tar xf go1.5.linux-amd64.tar.gz 
+	fi
     export GOROOT=/tmp/go
 
-	rm -rf /tmp/gopath
-    mkdir -p /tmp/gopath
-    pushd /tmp/gopath; mkdir -p src pkg bin; popd
+	echo "Preparing GOPATH"
+	if [ ! -d gopath ]; then
+		mkdir -p gopath/src
+		mkdir -p gopath/pkg
+		mkdir -p gopath/bin
+	fi
     export GOPATH=/tmp/gopath
+
+	echo "Fetching gb build tool & export paths"
     export PATH=$PATH:/tmp/go/bin/
-    go/bin/go get github.com/constabulary/gb/...
+    go get github.com/constabulary/gb/...
     export PATH=$PATH:$GOPATH/bin
 
 popd
