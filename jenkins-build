@@ -37,7 +37,7 @@ pushd /tmp
 popd
 
 # make deb dir
-cp -a $PACKAGE/* $DEST
+mkdir $DEST && cp -a $PACKAGE/* $DEST
 
 # build
 mkdir -p $GOPATH/src/github.com/Flipkart/config-service/
