@@ -42,6 +42,9 @@ if [ "$CMD" == "configure" ]; then
 	chown -R root:root /etc/logrotate.d
 	chmod 644 /etc/logrotate.d/*
 
+	# fix service owner
+	chown -R root:root /etc/service/fk-config-service-confd
+
     #/etc/init.d/$PAC start || die
     #/etc/init.d/$PAC status || die
 
