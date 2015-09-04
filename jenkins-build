@@ -44,6 +44,8 @@ mkdir -p $GOPATH/src/github.com/Flipkart/config-service/
 cp -r * $GOPATH/src/github.com/Flipkart/config-service/
 GOOS=linux GOARCH=amd64 GOROOT=/tmp/go ./build
 
+# copy binary
+mkdir $DEST/usr/share/$PACKAGE/bin
 cp bin/confd $DEST/usr/share/$PACKAGE/bin/
 
 echo "=============== Creating DEB ====================="
