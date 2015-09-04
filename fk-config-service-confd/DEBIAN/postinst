@@ -38,8 +38,10 @@ if [ "$CMD" == "configure" ]; then
 	chown $USER:$GROUP /var/log/flipkart/config-service
     makedir /var/run/$PAC
 
-    /usr/share/fk-ops-servicebuilder/servicebuilder.pl -N $PAC  -R /usr/share/$PAC/bin/run.sh || die "installing in /etc/service"
-    
+	# fix ownership and permissions of logrotate
+	chown -R root:root /etc/logrotate.d
+	chmod 644 /etc/logrotate.d/*
+
     #/etc/init.d/$PAC start || die
     #/etc/init.d/$PAC status || die
 
