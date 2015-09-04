@@ -19,11 +19,11 @@ echo "DEB: $DEB"
 echo "=============== Building! ==================="
 
 echo "Installing go"
-pushd /tmp
+pushd /tmp 
 
 	rm -rf /tmp/go
-	wget http://storage.googleapis.com/golang/go1.5.linux-amd64.tar.gz
-	tar xvf go1.5.linux-amd64.tar.gz
+	wget http://storage.googleapis.com/golang/go1.5.linux-amd64.tar.gz &> /dev/null
+	tar xf go1.5.linux-amd64.tar.gz 
     export GOROOT=/tmp/go
 
 	rm -rf /tmp/gopath
