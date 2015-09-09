@@ -1,7 +1,7 @@
 #!/bin/bash -e
 
 # calculate version
-MAJOR_VERSION=1
+MAJOR_VERSION=2
 MINOR_VERSION=$(git log -n1 --format="%ct")
 VERSION="${MAJOR_VERSION}.${MINOR_VERSION}"
 
