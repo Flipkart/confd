@@ -4,6 +4,6 @@ Architecture: all
 Section: flipkart/infra
 Priority: standard
 Maintainer: Pf Config Dev <pf-config-dev@flipkart.com>
-Depends: curl, fk-ops-servicebuilder
+Depends: curl,daemontools,daemontools-run 
 Description: Configuration Service
 

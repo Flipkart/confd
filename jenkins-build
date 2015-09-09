@@ -1,0 +1,71 @@
+#!/bin/bash -e
+
+# calculate version
+MAJOR_VERSION=1
+MINOR_VERSION=$(git log -n1 --format="%ct")
+VERSION="${MAJOR_VERSION}.${MINOR_VERSION}"
+
+# destination
+PACKAGE="fk-config-service-confd"
+DEST="/tmp/deb-$PACKAGE-$VERSION"
+DEB="/tmp/$PACKAGE-$VERSION.deb"
+
+echo "=============== Build Config ================="
+echo "PACKAGE: $PACKAGE"
+echo "VERSION: $VERSION"
+echo "DEST: $DEST"
+echo "DEB: $DEB"
+
+echo "=============== Building! ==================="
+
+pushd /tmp 
+
+	echo "Installing go"
+	if [ ! -d go ]; then
+		wget http://storage.googleapis.com/golang/go1.5.linux-amd64.tar.gz &> /dev/null
+		tar xf go1.5.linux-amd64.tar.gz 
+	fi
+    export GOROOT=/tmp/go
+
+	echo "Preparing GOPATH"
+	if [ ! -d gopath ]; then
+		mkdir -p gopath/src
+		mkdir -p gopath/pkg
+		mkdir -p gopath/bin
+	fi
+    export GOPATH=/tmp/gopath
+
+	echo "Fetching gb build tool & export paths"
+    export PATH=$PATH:/tmp/go/bin/
+    go get github.com/constabulary/gb/...
+    export PATH=$PATH:$GOPATH/bin
+
+popd
+
+# make deb dir
+mkdir $DEST && cp -a $PACKAGE/* $DEST
+
+# build
+mkdir -p $GOPATH/src/github.com/Flipkart/config-service/
+cp -r * $GOPATH/src/github.com/Flipkart/config-service/
+GOOS=linux GOARCH=amd64 GOROOT=/tmp/go ./build
+
+# copy binary
+mkdir -p $DEST/usr/share/$PACKAGE/bin
+cp bin/confd $DEST/usr/share/$PACKAGE/bin/
+
+echo "=============== Creating DEB ====================="
+sed -i -e "s/_PACKAGE_/$PACKAGE/g" $DEST/DEBIAN/control
+sed -i -e "s/_VERSION_/$VERSION/g" $DEST/DEBIAN/control
+dpkg -b $DEST $DEB
+
+echo "=============== Uploading to Repo-SVC =================="
+reposervice --host repo-svc-app-0001.nm.flipkart.com --port 8080 \
+	pub \
+	--appkey config-service \
+	--repo fk-config-service-confd \
+	--debs $DEB
+
+echo "=============== Cleaning up ==============="
+rm -rf $DEST $DEB
+
