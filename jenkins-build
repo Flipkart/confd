@@ -56,7 +56,7 @@ cp bin/confd $DEST/usr/share/$PACKAGE/bin/
 
 echo "=============== Creating DEB ====================="
 sed -i -e "s/_PACKAGE_/$PACKAGE/g" $DEST/DEBIAN/control
-sed -i -e "s/_VERSION_/$BUILD_NUMBER/g" $DEST/DEBIAN/control
+sed -i -e "s/_VERSION_/$VERSION/g" $DEST/DEBIAN/control
 dpkg -b $DEST $DEB
 
 echo "=============== Uploading to Repo-SVC =================="
