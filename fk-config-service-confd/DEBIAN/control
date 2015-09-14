@@ -1,5 +1,5 @@
 Package: _PACKAGE_
-Version: 1._VERSION_
+Version: _VERSION_
 Architecture: all
 Section: flipkart/infra
 Priority: standard
