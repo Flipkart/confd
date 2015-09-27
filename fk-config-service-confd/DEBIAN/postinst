@@ -45,7 +45,7 @@ if [ "$CMD" == "configure" ]; then
 	# fix service owner
 	chown -R root:root /etc/service/fk-config-service-confd
 
-    #/etc/init.d/$PAC start || die
+    /etc/init.d/$PAC start || die
     #/etc/init.d/$PAC status || die
 
 fi
