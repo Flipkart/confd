@@ -1,4 +1,17 @@
 #!/bin/bash
+
+### BEGIN INIT INFO
+# Provides:          fk-config-service-confd
+# Required-Start:
+# Required-Stop:
+# Should-Start:
+# Default-Start:     S
+# Default-Stop:
+# Short-Description: Daemon for configuration
+# Description:       Daemon which updates config files based 
+#					 on watches on config service
+### END INIT INFO
+
 set -e
 
 PACKAGE="fk-config-service-confd"
@@ -14,7 +27,11 @@ case $1 in
     ;;
   restart)
     svc -d $SERVICE
+	sleep 1
     svc -u $SERVICE
+    ;;
+  force-reload)
+	$CONFD
     ;;
   status)
     svstat $SERVICE
