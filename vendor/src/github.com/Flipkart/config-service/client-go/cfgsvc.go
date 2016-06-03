@@ -61,6 +61,8 @@ func NewConfigServiceClient(cacheSize int) (*ConfigServiceClient,error) {
         return nil, errors.New("Instance zone not found: " + readInstZone())
     }
 
+    log.Println("Using URL:", url)
+
     httpClient,err := NewHttpClient(&http.Client{Timeout: time.Duration(60 * time.Second)}, url)
     if err != nil {
         return nil, err
@@ -175,7 +177,7 @@ func cacheKey(name string, version int) string {
 
 
 var instZone struct {
-    zone string `json:"zone"`
+    Zone string `json:"zone"`
 }
 
 func readInstZone() string {
@@ -189,5 +191,5 @@ func readInstZone() string {
         log.Println("parsing config file", err.Error())
     }
 
-    return instZone.zone
+    return instZone.Zone
 }
