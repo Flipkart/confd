@@ -26,6 +26,8 @@ import (
     "log"
     "net/http"
     "github.com/hashicorp/golang-lru"
+    "os"
+    "encoding/json"
     "sync"
     "errors"
     "strconv"
@@ -41,13 +43,25 @@ type ConfigServiceClient struct {
     mutex sync.Mutex
 }
 
+var instZoneToCfgsvc map[string]string = map[string]string {
+    "in-mumbai-preprod": "http://10.85.42.2",
+    "in-mumbai-prod": "",
+    "in-chennai-1": "http://10.47.0.101",
+}
+
 const LATEST_VERSION = -1
 
 // NewConfigServiceClient creates a new instance of config service client and returns its pointer.
-func NewConfigServiceClient(url string, cacheSize int) (*ConfigServiceClient,error) {
+func NewConfigServiceClient(cacheSize int) (*ConfigServiceClient,error) {
 
     client := &ConfigServiceClient{}
-    httpClient,err := NewHttpClient(&http.Client{Timeout: time.Duration(300 * time.Second)}, url)
+    url, ok := instZoneToCfgsvc[readInstZone()]
+    if !ok {
+        log.Println("Instance zone not found, please upgrade to new package")
+        return nil, errors.New("Instance zone not found: " + readInstZone())
+    }
+
+    httpClient,err := NewHttpClient(&http.Client{Timeout: time.Duration(60 * time.Second)}, url)
     if err != nil {
         return nil, err
     }
@@ -159,3 +173,21 @@ func cacheKey(name string, version int) string {
     return name + ":" + strconv.Itoa(version);
 }
 
+
+var instZone struct {
+    zone string `json:"zone"`
+}
+
+func readInstZone() string {
+    instMetaData, err :=  os.Open("/etc/default/megh/instance_metadata.json")
+    if err != nil {
+        log.Println("Error opening Instance Metadata json")
+    }
+
+    jsonParser := json.NewDecoder(instMetaData)
+    if err = jsonParser.Decode(&instZone); err != nil {
+        log.Println("parsing config file", err.Error())
+    }
+
+    return instZone.zone
+}

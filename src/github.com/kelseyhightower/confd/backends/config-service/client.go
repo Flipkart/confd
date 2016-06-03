@@ -44,7 +44,7 @@ func (this *BucketListener) Updated(oldBucket *cfgsvc.Bucket, newBucket *cfgsvc.
 
 
 func NewConfigClient(machines []string) (*Client, error) {
-	c, err := cfgsvc.NewConfigServiceClient(machines[0], 50) //*10)
+	c, err := cfgsvc.NewConfigServiceClient(50) //*10)
 	if err != nil {
 		panic(err)
 	}

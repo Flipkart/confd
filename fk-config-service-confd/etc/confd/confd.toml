@@ -1,6 +1,3 @@
 backend = "config-service"
 confdir = "/etc/confd"
 watch = true
-nodes = [
-    "http://10.47.0.101",
-]
