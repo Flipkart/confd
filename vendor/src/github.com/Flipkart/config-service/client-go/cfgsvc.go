@@ -59,7 +59,7 @@ func NewConfigServiceClient(cacheSize int) (*ConfigServiceClient,error) {
     client := &ConfigServiceClient{}
     var url string
     zone := readInstZone()
-    url, ok = instZoneToCfgsvc[zone]
+    url, ok := instZoneToCfgsvc[zone]
     if !ok {
         log.Println("Instance zone not found, defaulting to prepod")
         url = instZoneToCfgsvc[Preprod]
