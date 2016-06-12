@@ -23,10 +23,11 @@ type HttpClient struct {
 	url string
 	ipv4 string
 	hostname string
+    zone string
 }
 
 // NewHttpClient is the constructor for the bucket API implementation of HttpClient.
-func NewHttpClient(client *http.Client, url string) (*HttpClient, error) {
+func NewHttpClient(client *http.Client, url string, zone string) (*HttpClient, error) {
 
     // get hostname
 	hostname, err := os.Hostname()
@@ -51,7 +52,7 @@ func NewHttpClient(client *http.Client, url string) (*HttpClient, error) {
     }
 
     // create instance
-	return &HttpClient{instance: client, url: url, ipv4: hostIP, hostname: hostname}, nil
+    return &HttpClient{instance: client, url: url, ipv4: hostIP, hostname: hostname, zone: zone}, nil
 
 }
 
@@ -95,6 +96,7 @@ func (this *HttpClient) get(name string, version int, watch bool, sourceVersion 
     // identity headers
     req.Header.Add("X-Client-IPv4", this.ipv4)
     req.Header.Add("X-Client-Hostname", this.hostname)
+    req.Header.Add("X-Client-Zone", this.zone)
 
 	resp, err := this.instance.Do(req)
 	if err != nil {

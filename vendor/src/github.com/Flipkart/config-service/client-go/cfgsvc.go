@@ -43,6 +43,8 @@ type ConfigServiceClient struct {
     mutex sync.Mutex
 }
 
+const Preprod = "in-mumbai-preprod"
+
 var instZoneToCfgsvc map[string]string = map[string]string {
     "in-mumbai-preprod": "http://10.85.42.2",
     "in-mumbai-prod": "",
@@ -55,15 +57,17 @@ const LATEST_VERSION = -1
 func NewConfigServiceClient(cacheSize int) (*ConfigServiceClient,error) {
 
     client := &ConfigServiceClient{}
-    url, ok := instZoneToCfgsvc[readInstZone()]
+    var url string
+    zone := readInstZone()
+    url, ok = instZoneToCfgsvc[zone]
     if !ok {
-        log.Println("Instance zone not found, please upgrade to new package")
-        return nil, errors.New("Instance zone not found: " + readInstZone())
+        log.Println("Instance zone not found, defaulting to prepod")
+        url = instZoneToCfgsvc[Preprod]
     }
 
-    log.Println("Using URL:", url)
+    log.Println("Using URL: " + url)
 
-    httpClient,err := NewHttpClient(&http.Client{Timeout: time.Duration(60 * time.Second)}, url)
+    httpClient,err := NewHttpClient(&http.Client{Timeout: time.Duration(60 * time.Second)}, url, zone)
     if err != nil {
         return nil, err
     }
