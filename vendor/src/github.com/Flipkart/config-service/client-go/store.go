@@ -3,8 +3,6 @@ package cfgsvc
 import (
 	"errors"
 	"log"
-    "net"
-    "os"
 	"net/http"
 	"strconv"
 	"net/url"
@@ -21,39 +19,12 @@ import (
 type HttpClient struct {
 	instance *http.Client
 	url string
-	ipv4 string
-	hostname string
-    zone string
+    instanceMetadata *InstanceMetadata
 }
 
 // NewHttpClient is the constructor for the bucket API implementation of HttpClient.
-func NewHttpClient(client *http.Client, url string, zone string) (*HttpClient, error) {
-
-    // get hostname
-	hostname, err := os.Hostname()
-	if (err != nil) {
-		return nil, err
-	}
-
-    // get ipv4
-    var hostIP string
-    interfaces, _ := net.Interfaces()
-    for _, inter := range interfaces {
-        if addrs, err := inter.Addrs(); err == nil {
-            for _, addr := range addrs {
-                switch ip := addr.(type) {
-                case *net.IPNet:
-                    if ip.IP.DefaultMask() != nil && !ip.IP.IsLoopback() {
-                        hostIP = ip.IP.To4().String()
-                    }
-                }
-            }
-        }
-    }
-
-    // create instance
-    return &HttpClient{instance: client, url: url, ipv4: hostIP, hostname: hostname, zone: zone}, nil
-
+func NewHttpClient(client *http.Client, url string, instanceMetadata *InstanceMetadata) (*HttpClient, error) {
+    return &HttpClient{instance: client, url: url, instanceMetadata: instanceMetadata}, nil
 }
 
 const(
@@ -94,9 +65,11 @@ func (this *HttpClient) get(name string, version int, watch bool, sourceVersion 
 	req.Header.Add("X-Config-Bucket-Version", sourceVersion)
 
     // identity headers
-    req.Header.Add("X-Client-IPv4", this.ipv4)
-    req.Header.Add("X-Client-Hostname", this.hostname)
-    req.Header.Add("X-Client-Zone", this.zone)
+    req.Header.Add("X-Client-IPv4", this.instanceMetadata.PrimaryIP)
+    req.Header.Add("X-Client-Hostname", this.instanceMetadata.Hostname)
+	req.Header.Add("X-Client-App", this.instanceMetadata.App)
+	req.Header.Add("X-Client-Zone", this.instanceMetadata.Zone)
+	req.Header.Add("X-Client-Instance-Group", this.instanceMetadata.Zone)
 
 	resp, err := this.instance.Do(req)
 	if err != nil {

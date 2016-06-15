@@ -32,22 +32,33 @@ import (
     "errors"
     "strconv"
     "time"
+    "net"
 )
 
 // ConfigServiceClient provides API to interact with config service to
 // read and watch for configuration changes
 type ConfigServiceClient struct {
     httpClient *HttpClient
+    instanceMetadata *InstanceMetadata
     dynamicBucketCache *lru.Cache
     staticBucketCache *lru.Cache
     mutex sync.Mutex
 }
 
-const Preprod = "in-mumbai-preprod"
+type InstanceMetadata struct {
+    App string  `json:"app"`
+    Zone string `json:"zone"`
+    InstanceGroup string `json:"instance_group"`
+    Hostname string `json:"hostname"`
+    PrimaryIP string `json:"primary_ip"`
+}
 
-var instZoneToCfgsvc map[string]string = map[string]string {
+const InstanceMetadataFile = "/etc/default/megh/instance_metadata.json"
+const PreprodZone = "in-mumbai-preprod"
+
+var instZoneToCfgsvc = map[string]string {
     "in-mumbai-preprod": "http://10.85.42.2",
-    "in-mumbai-prod": "",
+    "in-mumbai-prod": "http://10.85.50.3",
     "in-chennai-1": "http://10.47.0.101",
 }
 
@@ -57,21 +68,26 @@ const LATEST_VERSION = -1
 func NewConfigServiceClient(cacheSize int) (*ConfigServiceClient,error) {
 
     client := &ConfigServiceClient{}
+
+    // get instance metadata
+    meta := readInstMetadata()
+
+    // get url
     var url string
-    zone := readInstZone()
-    url, ok := instZoneToCfgsvc[zone]
+    url, ok := instZoneToCfgsvc[meta.Zone]
     if !ok {
-        log.Println("Instance zone not found, defaulting to prepod")
-        url = instZoneToCfgsvc[Preprod]
+        log.Println("Instance zone not found, defaulting to " + PreprodZone)
+        url = instZoneToCfgsvc[PreprodZone]
     }
+    log.Println("Using endpoint: " + url)
 
-    log.Println("Using URL: " + url)
-
-    httpClient,err := NewHttpClient(&http.Client{Timeout: time.Duration(60 * time.Second)}, url, zone)
+    // create client
+    httpClient, err := NewHttpClient(&http.Client{Timeout: time.Duration(60 * time.Second)}, url, meta)
     if err != nil {
         return nil, err
     }
 
+    // dynamic cache
     client.dynamicBucketCache, err = lru.NewWithEvict(cacheSize, func(bucketName interface{}, value interface{}) {
         dynamicBucket := value.(*DynamicBucket)
         log.Println("Removing bucket from local cache: ", bucketName)
@@ -79,12 +95,13 @@ func NewConfigServiceClient(cacheSize int) (*ConfigServiceClient,error) {
         dynamicBucket.shutdown()
     })
 
+    // static cache
     client.staticBucketCache, err = lru.NewWithEvict(cacheSize, func(bucketName interface{}, value interface{}) {
         log.Println("Removing bucket from local cache: ", bucketName)
     })
 
     if err != nil {
-        return nil,err
+        return nil, err
     } else {
         client.httpClient = httpClient
         return client, nil
@@ -179,21 +196,54 @@ func cacheKey(name string, version int) string {
     return name + ":" + strconv.Itoa(version);
 }
 
+func readInstMetadata() *InstanceMetadata {
 
-var instZone struct {
-    Zone string `json:"zone"`
-}
+    // create instance
+    meta := &InstanceMetadata{}
 
-func readInstZone() string {
-    instMetaData, err :=  os.Open("/etc/default/megh/instance_metadata.json")
+    // read from json
+    jsn, err :=  os.Open(InstanceMetadataFile)
     if err != nil {
-        log.Println("Error opening Instance Metadata json")
+        log.Println("Error opening " + InstanceMetadataFile + ": " + err.Error())
     }
 
-    jsonParser := json.NewDecoder(instMetaData)
-    if err = jsonParser.Decode(&instZone); err != nil {
-        log.Println("parsing config file", err.Error())
+    // parse json
+    jsonParser := json.NewDecoder(jsn)
+    if err = jsonParser.Decode(&meta); err != nil {
+        log.Println("Error parsing instance metadata: " + err.Error())
     }
 
-    return instZone.Zone
+    // get hostname
+    if meta.Hostname, err = os.Hostname(); err != nil {
+        log.Println("Error getting hostname, using from metadata (" + meta.Hostname + "): " + err.Error())
+    }
+
+    // get ipv4
+    if meta.PrimaryIP == "" {
+        interfaces, _ := net.Interfaces()
+        for _, inter := range interfaces {
+            if addrs, err := inter.Addrs(); err == nil {
+                for _, addr := range addrs {
+                    switch ip := addr.(type) {
+                    case *net.IPNet:
+                        if ip.IP.DefaultMask() != nil && !ip.IP.IsLoopback() {
+                            meta.PrimaryIP = ip.IP.To4().String()
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // defaults
+    if meta.Zone == "" {
+        meta.InstanceGroup = "#NULL#"
+    }
+    if meta.App == "" {
+        meta.App = "#NULL#"
+    }
+    if meta.InstanceGroup == "" {
+        meta.InstanceGroup = "#NULL#"
+    }
+    return meta
 }

@@ -47,8 +47,8 @@ func testProperty(t *testing.T, p map[string]interface{}) {
 func Test_ConmanClient_GetBucket(t *testing.T) {
 
     server, httpClient := httpTestTool(200, `{"metadata":{"name":"foo","version":10,"lastUpdated":1431597657},"keys":{"foo":"bar","bar":"baz"}}`)
-    client, err := NewConfigServiceClient(server.URL, 50)
-    client.httpClient, _ = NewHttpClient(&httpClient, server.URL)
+    client, err := NewConfigServiceClient(50)
+    client.httpClient, _ = NewHttpClient(&httpClient, server.URL, "in-mumbai-preprod")
     assert.Nil(t, err)
     assert.NotNil(t, client)
 
