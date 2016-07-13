@@ -1,0 +1,4 @@
+#!/bin/bash -e
+
+exec multilog t s1048576 n10 /var/log/fk-config-service-confd
+

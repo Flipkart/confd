@@ -1,15 +1,10 @@
 #! /bin/bash -e
 
 PAC="fk-config-service-confd"
-USER="cfgsvc"
-GROUP="cfgsvc"
 
 CMD="$1"
 
 die () {
-  # syntax: die message ...
-  #
-  # exit script with error message
   echo "$PAC postinst error: $*"
   echo -e "\033[31m ================================\033[0m"
   echo -e "\033[31m Deployment FAILED on $HOSTNAME\033[0m"
@@ -17,40 +12,15 @@ die () {
   exit 2
 }
 
-makedir () {
-    mkdir -pv $1
-    chown $USER:$GROUP $1
-}
-
 if [ "$CMD" == "configure" ]; then
 
-    # creating user & group if it doesnt exist
-    if ! getent group $GROUP > /dev/null; then
-        groupadd $GROUP
-    fi
-    if ! getent passwd $USER > /dev/null; then
-        adduser --system --no-create-home \
-        --ingroup $GROUP --disabled-password --shell /bin/false \
-        $USER
-    fi
-
-    makedir /var/log/flipkart/config-service
-	chown $USER:$GROUP /var/log/flipkart/config-service
-    makedir /var/run/$PAC
-
-	# fix ownership and permissions of logrotate
-	chown -R root:root /etc/logrotate.d
-	chmod 644 /etc/logrotate.d/*
+    mkdir /var/log/$PAC
+    mkdir /var/run/$PAC
 
 	# fix service owner
 	chown -R root:root /etc/service/fk-config-service-confd
 
     /etc/init.d/$PAC start || die
-    #/etc/init.d/$PAC status || die
 
 fi
-
-echo -e "\033[32m ================================\033[0m"
-echo -e "\033[32m Deployment COMPLETED on $HOSTNAME\033[0m"
-echo -e "\033[32m ================================\033[0m"
 
