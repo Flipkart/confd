@@ -54,10 +54,11 @@ type InstanceMetadata struct {
 }
 
 const InstanceMetadataFile = "/etc/default/megh/instance_metadata.json"
-const PreprodZone = "in-mumbai-preprod"
+const DefaultZone = "in-staging"
 
 var instZoneToCfgsvc = map[string]string {
-    "in-mumbai-preprod": "http://10.85.42.2",
+    "in-staging": "	http://config-service-sandbox.ch.flipkart.com",
+    // "in-mumbai-preprod": "http://10.85.42.2",
     "in-mumbai-prod": "http://10.85.50.3",
     "in-chennai-1": "http://10.47.0.101",
 }
@@ -76,8 +77,8 @@ func NewConfigServiceClient(cacheSize int) (*ConfigServiceClient,error) {
     var url string
     url, ok := instZoneToCfgsvc[meta.Zone]
     if !ok {
-        log.Println("Instance zone not found, defaulting to " + PreprodZone)
-        url = instZoneToCfgsvc[PreprodZone]
+        log.Println("Instance zone not found, defaulting to " + DefaultZone)
+        url = instZoneToCfgsvc[DefaultZone]
     }
     log.Println("Using endpoint: " + url)
 
