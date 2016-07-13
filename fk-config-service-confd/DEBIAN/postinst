@@ -14,8 +14,7 @@ die () {
 
 if [ "$CMD" == "configure" ]; then
 
-    mkdir /var/log/$PAC
-    mkdir /var/run/$PAC
+    mkdir -p /var/log/$PAC
 
 	# fix service owner
 	chown -R root:root /etc/service/fk-config-service-confd
