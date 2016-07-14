@@ -1,25 +1,8 @@
 #! /bin/bash -e
 
-PAC="fk-config-service-confd"
-
-CMD="$1"
-
-die () {
-  echo "$PAC postinst error: $*"
-  echo -e "\033[31m ================================\033[0m"
-  echo -e "\033[31m Deployment FAILED on $HOSTNAME\033[0m"
-  echo -e "\033[31m ================================\033[0m"
-  exit 2
-}
-
-if [ "$CMD" == "configure" ]; then
-
-    mkdir -p /var/log/$PAC
-
-	# fix service owner
-	chown -R root:root /etc/service/fk-config-service-confd
-
-    /etc/init.d/$PAC start || die
-
+PACKAGE="fk-config-service-confd"
+mkdir -p /var/log/$PAC
+if [ ! -L /etc/service/$PAC ]; then
+	ln -s /etc/sv/$PAC /etc/service/$PAC
 fi
 
