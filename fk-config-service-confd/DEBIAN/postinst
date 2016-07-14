@@ -1,4 +1,4 @@
-#! /bin/bash -e
+#!/bin/bash -e
 
 PACKAGE="fk-config-service-confd"
 mkdir -p /var/log/$PAC

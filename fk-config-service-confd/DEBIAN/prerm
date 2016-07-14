@@ -2,6 +2,6 @@
 
 PAC="fk-config-service-confd"
 svc -dx /etc/service/$PAC
-svc -dx /etc/service/$PAC
+svc -dx /etc/service/$PAC/log
 unlink /etc/service/$PAC
 
