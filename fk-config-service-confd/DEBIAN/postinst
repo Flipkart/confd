@@ -2,6 +2,11 @@
 
 PACKAGE="fk-config-service-confd"
 mkdir -p /var/log/$PACKAGE
+
+if [ -d /etc/service/$PACKAGE ]; then
+    rm -rf /etc/service/$PACKAGE
+fi
+
 if [ ! -L /etc/service/$PACKAGE ]; then
 	ln -s /etc/sv/$PACKAGE /etc/service/$PACKAGE
 fi
