@@ -1,8 +1,8 @@
 #!/bin/bash -e
 
 PACKAGE="fk-config-service-confd"
-mkdir -p /var/log/$PAC
-if [ ! -L /etc/service/$PAC ]; then
-	ln -s /etc/sv/$PAC /etc/service/$PAC
+mkdir -p /var/log/$PACKAGE
+if [ ! -L /etc/service/$PACKAGE ]; then
+	ln -s /etc/sv/$PACKAGE /etc/service/$PACKAGE
 fi
 
