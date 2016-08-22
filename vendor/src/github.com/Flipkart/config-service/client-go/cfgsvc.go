@@ -57,9 +57,10 @@ const InstanceMetadataFile = "/etc/default/megh/instance_metadata.json"
 const DefaultZone = "in-staging"
 
 var instZoneToCfgsvc = map[string]string {
-    "in-staging": "	http://config-service-sandbox.ch.flipkart.com",
+    "in-staging": "http://config-service-sandbox.ch.flipkart.com",
     // "in-mumbai-preprod": "http://10.85.42.2",
     "in-mumbai-prod": "http://10.85.50.3",
+    "in-mumbai-gw": "http://10.85.50.3",
     "in-chennai-1": "http://10.47.0.101",
 }
 
