@@ -10,7 +10,7 @@
 		{
 			"importpath": "github.com/Flipkart/config-service/client-go",
 			"repository": "https://github.com/Flipkart/config-service",
-			"revision": "4b1f0dda8f4760c09c81d09b224e6c6b0bf345d6",
+			"revision": "be2129cfd1f9731abc935b4fed1c072e0e84bcb0",
 			"branch": "iaas",
 			"path": "/client-go"
 		},
