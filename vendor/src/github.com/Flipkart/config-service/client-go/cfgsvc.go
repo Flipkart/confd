@@ -54,12 +54,13 @@ type InstanceMetadata struct {
 }
 
 const InstanceMetadataFile = "/etc/default/megh/instance_metadata.json"
-const DefaultZone = "in-staging"
+const DefaultZone = "in-mumbai-preprod"
 
 var instZoneToCfgsvc = map[string]string{
-	"in-staging": "http://10.75.30.57",
 	// "in-mumbai-preprod": "http://10.85.42.2",
 	"in-mumbai-prod":    "http://10.85.50.3",
+	"in-mumbai-preprod":    "http://10.85.42.8",
+	"in-mumbai-preprod-b":    "http://10.85.42.8",
 	"in-mumbai-gateway": "http://10.85.50.3",
 	"in-chennai-1":      "http://10.47.0.101",
 }
