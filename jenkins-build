@@ -21,6 +21,7 @@ echo "=============== Building! ==================="
 pushd /tmp 
 
 	echo "Installing go"
+	rm -r go
 	if [ ! -d go ]; then
 		wget http://storage.googleapis.com/golang/go1.9.linux-amd64.tar.gz 
 		tar xf go1.9.linux-amd64.tar.gz
@@ -60,12 +61,12 @@ sed -i -e "s/_PACKAGE_/$PACKAGE/g" $DEST/DEBIAN/control
 sed -i -e "s/_VERSION_/$VERSION/g" $DEST/DEBIAN/control
 dpkg -b $DEST $DEB
 
-echo "=============== Uploading to Repo-SVC =================="
-reposervice --host repo-svc-app-0001.nm.flipkart.com --port 8080 \
-	pub \
-	--appkey config-service \
-	--repo fk-config-service-confd \
-	--debs $DEB
+#echo "=============== Uploading to Repo-SVC =================="
+#reposervice --host repo-svc-app-0001.nm.flipkart.com --port 8080 \
+#	pub \
+#	--appkey config-service \
+#	--repo fk-config-service-confd \
+#	--debs $DEB
 
 echo "=============== Cleaning up ==============="
 rm -rf $DEST $DEB
