@@ -21,12 +21,10 @@ echo "=============== Building! ==================="
 pushd /tmp 
 
 	echo "Installing go"
-	rm -r go
 	if [ ! -d go ]; then
-		wget http://storage.googleapis.com/golang/go1.9.linux-amd64.tar.gz 
+		wget http://storage.googleapis.com/golang/go1.9.linux-amd64.tar.gz &> /dev/null
 		tar xf go1.9.linux-amd64.tar.gz
 	fi
-	go version
     export GOROOT=/tmp/go
 
 	echo "Preparing GOPATH"
@@ -36,7 +34,7 @@ pushd /tmp
 		mkdir -p gopath/bin
 	fi
     export GOPATH=/tmp/gopath
-
+	go version
 	echo "Fetching gb build tool & export paths"
     export PATH=$PATH:/tmp/go/bin/
     go get github.com/constabulary/gb/...
