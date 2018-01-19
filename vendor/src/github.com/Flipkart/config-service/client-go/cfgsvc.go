@@ -26,6 +26,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/hashicorp/golang-lru"
+	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
@@ -33,6 +34,8 @@ import (
 	"strconv"
 	"sync"
 	"time"
+	"strings"
+	"fmt"
 )
 
 // ConfigServiceClient provides API to interact with config service to
@@ -51,13 +54,23 @@ type InstanceMetadata struct {
 	InstanceGroup string `json:"instance_group"`
 	Hostname      string `json:"hostname"`
 	PrimaryIP     string `json:"primary_ip"`
+	Id 			     int `json:"id"`
+}
+
+type CfgSvcApiOverrides struct {
+	Endpoint      string
 }
 
 const InstanceMetadataFile = "/etc/default/megh/instance_metadata.json"
 const DefaultZone = "in-mumbai-preprod"
+const CfgSvcApiOverridesFile = "/etc/default/cfg-api"
+const CloudCliEndpoint = "http://10.47.255.6:8080"
+
+var instVpcToCfgSvc = map[string]string{
+	"fk-helios": "http://10.47.0.179",
+}
 
 var instZoneToCfgsvc = map[string]string{
-	// "in-mumbai-preprod": "http://10.85.42.2",
 	"in-mumbai-prod":    "http://10.85.50.3",
 	"in-mumbai-preprod":    "http://10.85.42.8",
 	"in-mumbai-preprod-b":    "http://10.85.42.8",
@@ -75,17 +88,41 @@ func NewConfigServiceClient(cacheSize int) (*ConfigServiceClient, error) {
 	// get instance metadata
 	meta := readInstMetadata()
 
+	netHttpClient := &http.Client{Timeout: time.Duration(60 * time.Second)}
+
 	// get url
-	var url string
-	url, ok := instZoneToCfgsvc[meta.Zone]
-	if !ok {
-		log.Println("Instance zone not found, defaulting to " + DefaultZone)
-		url = instZoneToCfgsvc[DefaultZone]
+	url := ""
+	ok := false
+
+	overrides, err := getOverrides(CfgSvcApiOverridesFile)
+	if err == nil && len(overrides.Endpoint) > 0 {
+		log.Println("Overriding endpoint")
+		url = overrides.Endpoint
+	} else {
+		if !(meta.Zone == "in-mumbai-preprod" || meta.Zone == "in-mumbai-preprod-b" || meta.Zone == "#NULL#") {
+			// get the vpc info
+			vpcSubnetName, _ := getVpcSubnetName(netHttpClient, meta)
+
+			if vpcSubnetName != "" {
+				if url, ok = instVpcToCfgSvc[vpcSubnetName]; ok {
+					log.Println("Vpc found: " + vpcSubnetName)
+				}
+			}
+		}	
+	
+		if url == "" {
+			url, ok = instZoneToCfgsvc[meta.Zone]
+			if !ok {
+				log.Println("Instance zone not found, defaulting to " + DefaultZone)
+				url = instZoneToCfgsvc[DefaultZone]
+			}
+		}	
 	}
+
 	log.Println("Using endpoint: " + url)
 
 	// create client
-	httpClient, err := NewHttpClient(&http.Client{Timeout: time.Duration(60 * time.Second)}, url, meta)
+	httpClient, err := NewHttpClient(netHttpClient, url, meta)
 	if err != nil {
 		return nil, err
 	}
@@ -199,6 +236,104 @@ func (this *ConfigServiceClient) initStaticBucket(name string, version int) (*Bu
 
 func cacheKey(name string, version int) string {
 	return name + ":" + strconv.Itoa(version)
+}
+
+func getProperties(fileName string) (map[string]string, error) {
+	bytes, err := ioutil.ReadFile(fileName)
+
+	if err != nil {
+		log.Println("Failed to read file: " + fileName + ". Ignoring overrides")
+		return nil, err
+	}
+
+	lines := strings.Split(string(bytes[:]), "\n")
+
+	properties := map[string]string{}
+	for _, line := range lines {
+		if len(line) > 0 {
+			kv := strings.Split(line, "=")
+			if len(kv) != 2 {
+				return nil, fmt.Errorf("format error in line : \"%s\"", line)
+			}
+
+			key := strings.TrimSpace(kv[0])
+			value := strings.TrimSpace(kv[1])
+
+			if len(key) == 0 || len(value) == 0 {
+				return nil, fmt.Errorf("format error in line : \"%s\"", line)
+			}
+
+			properties[key] = value
+		}
+	} 
+
+	return properties, nil
+}
+
+func getOverrides(fileName string) (CfgSvcApiOverrides, error) {
+	overrides := CfgSvcApiOverrides{Endpoint : ""}
+
+	properties, err := getProperties(fileName)
+
+	if err != nil {
+		return overrides, err
+	}
+
+	host, ok := properties["host"]
+	if !ok {
+		return overrides, fmt.Errorf("empty overrides")  
+	}
+
+	port_str, ok := properties["port"]
+
+	if !ok {
+		port_str = "80"
+	} else {
+		_, err = strconv.Atoi(port_str)
+		if err != nil {
+			return overrides, fmt.Errorf("port is not a number") 
+		}	
+	}
+	
+	overrides.Endpoint = "http://" + host + ":" + port_str
+
+	return overrides, nil
+}
+
+func doRequest(httpClient *http.Client, url string) ([]byte, error) {
+	req, _ := http.NewRequest("GET", url, nil)
+	req.Header.Add("Accept", "application/json")
+
+	resp, err := httpClient.Do(req)
+
+	if err != nil {
+		log.Println("Failed to do request. error: " + err.Error())
+		return nil, err
+	}
+
+	defer resp.Body.Close()
+
+	return ioutil.ReadAll(resp.Body)
+}
+
+func getVpcSubnetName(httpClient *http.Client, meta *InstanceMetadata) (string, error) {
+	
+	url := CloudCliEndpoint + "/compute/v2/apps/" + meta.App + "/zones/" + meta.Zone + "/instances/" + strconv.Itoa(meta.Id)
+
+	resp_body, err := doRequest(httpClient, url)
+
+	if err != nil {
+		return "", err
+	}
+
+	var jsonVal map[string]interface{}
+
+	if err := json.Unmarshal(resp_body, &jsonVal); err != nil {
+        log.Println("Error parsing cloud cli rsponse as json. error: " + err.Error())
+        return "", err
+    }
+
+    return strings.ToLower(jsonVal["vpc_subnet_name"].(string)), nil
 }
 
 func readInstMetadata() *InstanceMetadata {
