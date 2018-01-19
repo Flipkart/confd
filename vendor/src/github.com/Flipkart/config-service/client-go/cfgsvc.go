@@ -67,7 +67,7 @@ const CfgSvcApiOverridesFile = "/etc/default/cfg-api"
 const CloudCliEndpoint = "http://10.47.255.6:8080"
 
 var instVpcToCfgSvc = map[string]string{
-	"fk-helios": "http://10.47.0.179",
+	"fk-helios-ch": "http://10.47.0.179",
 	"fk-prod-ch": "http://10.47.0.101",
 }
 
