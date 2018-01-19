@@ -54,7 +54,7 @@ type InstanceMetadata struct {
 	InstanceGroup string `json:"instance_group"`
 	Hostname      string `json:"hostname"`
 	PrimaryIP     string `json:"primary_ip"`
-	Id 			     int `json:"id"`
+	Id 			  string `json:"id"`
 }
 
 type CfgSvcApiOverrides struct {
@@ -319,7 +319,7 @@ func doRequest(httpClient *http.Client, url string) ([]byte, error) {
 
 func getVpcSubnetName(httpClient *http.Client, meta *InstanceMetadata) (string, error) {
 	
-	url := CloudCliEndpoint + "/compute/v2/apps/" + meta.App + "/zones/" + meta.Zone + "/instances/" + strconv.Itoa(meta.Id)
+	url := CloudCliEndpoint + "/compute/v2/apps/" + meta.App + "/zones/" + meta.Zone + "/instances/" + meta.Id
 
 	resp_body, err := doRequest(httpClient, url)
 
