@@ -62,7 +62,7 @@ func Test_get_vpc_name(t *testing.T) {
     _, client := httpTestTool(200, `{"id":"123456","primary_ip":"10.20.30.40","hostname":"hostname1","vpc_subnet_name":"Fk-Helios","version":2627,"app":"test","zone":"zone1","machine_type":"vm"}`, &url)
 
     meta := &InstanceMetadata{}
-    meta.Id = 123456
+    meta.Id = "123456"
     meta.App = "test"
     meta.Zone = "zone1"
     meta.InstanceGroup = "ig1"

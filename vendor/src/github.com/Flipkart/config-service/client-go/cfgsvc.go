@@ -54,7 +54,7 @@ type InstanceMetadata struct {
 	InstanceGroup string `json:"instance_group"`
 	Hostname      string `json:"hostname"`
 	PrimaryIP     string `json:"primary_ip"`
-	Id 			     int `json:"id"`
+	Id 			  string `json:"id"`
 }
 
 type CfgSvcApiOverrides struct {
@@ -68,6 +68,7 @@ const CloudCliEndpoint = "http://10.47.255.6:8080"
 
 var instVpcToCfgSvc = map[string]string{
 	"fk-helios": "http://10.47.0.179",
+	"fk-prod-ch": "http://10.47.0.101",
 }
 
 var instZoneToCfgsvc = map[string]string{
@@ -101,8 +102,8 @@ func NewConfigServiceClient(cacheSize int) (*ConfigServiceClient, error) {
 	} else {
 		if !(meta.Zone == "in-mumbai-preprod" || meta.Zone == "in-mumbai-preprod-b" || meta.Zone == "#NULL#") {
 			// get the vpc info
+			log.Println("Attempting to get vpc name")
 			vpcSubnetName, _ := getVpcSubnetName(netHttpClient, meta)
-
 			if vpcSubnetName != "" {
 				if url, ok = instVpcToCfgSvc[vpcSubnetName]; ok {
 					log.Println("Vpc found: " + vpcSubnetName)
@@ -318,7 +319,7 @@ func doRequest(httpClient *http.Client, url string) ([]byte, error) {
 
 func getVpcSubnetName(httpClient *http.Client, meta *InstanceMetadata) (string, error) {
 	
-	url := CloudCliEndpoint + "/compute/v2/apps/" + meta.App + "/zones/" + meta.Zone + "/instances/" + strconv.Itoa(meta.Id)
+	url := CloudCliEndpoint + "/compute/v2/apps/" + meta.App + "/zones/" + meta.Zone + "/instances/" + meta.Id
 
 	resp_body, err := doRequest(httpClient, url)
 
