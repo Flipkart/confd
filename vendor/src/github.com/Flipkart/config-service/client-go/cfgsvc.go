@@ -79,6 +79,8 @@ var instZoneToCfgsvc = map[string]string{
 	"in-chennai-1":      "http://10.47.0.101",
 }
 
+var skipListForVpcCheck = [...]string{"in-mumbai-preprod", "in-mumbai-preprod-b", "in-mumbai-prod", "in-mumbai-gateway", "#NULL#"}
+
 const LATEST_VERSION = -1
 
 // NewConfigServiceClient creates a new instance of config service client and returns its pointer.
@@ -100,7 +102,7 @@ func NewConfigServiceClient(cacheSize int) (*ConfigServiceClient, error) {
 		log.Println("Overriding endpoint")
 		url = overrides.Endpoint
 	} else {
-		if !(meta.Zone == "in-mumbai-preprod" || meta.Zone == "in-mumbai-preprod-b" || meta.Zone == "#NULL#") {
+		if !(skipVpcCheck(meta.Zone)) {
 			// get the vpc info
 			log.Println("Attempting to get vpc name")
 			vpcSubnetName, _ := getVpcSubnetName(netHttpClient, meta)
@@ -239,6 +241,15 @@ func cacheKey(name string, version int) string {
 	return name + ":" + strconv.Itoa(version)
 }
 
+func skipVpcCheck(zone string) bool {
+	for _, z := range skipListForVpcCheck {
+        if z == zone {
+            return true
+        }
+    }
+    return false
+}
+
 func getProperties(fileName string) (map[string]string, error) {
 	bytes, err := ioutil.ReadFile(fileName)
 
@@ -334,7 +345,12 @@ func getVpcSubnetName(httpClient *http.Client, meta *InstanceMetadata) (string, 
         return "", err
     }
 
-    return strings.ToLower(jsonVal["vpc_subnet_name"].(string)), nil
+    vpcname := jsonVal["vpc_subnet_name"]
+    if vpcname != nil {
+		return strings.ToLower(vpcname.(string)), nil 
+    }
+
+    return "", fmt.Errorf("vpc name not found")
 }
 
 func readInstMetadata() *InstanceMetadata {
