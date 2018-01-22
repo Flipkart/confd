@@ -45,6 +45,15 @@ func testProperty(t *testing.T, p map[string]interface{}) {
     assert.Equal(t, p, testBucketData.GetKeys())
 }
 
+func Test_vpc_check_skip(t *testing.T) {
+    for _, z := range skipListForVpcCheck {
+        assert.True(t, skipVpcCheck(z))
+    }
+    
+    assert.False(t, skipVpcCheck("in-chennai-1"))
+    assert.False(t, skipVpcCheck("in-someplace-42"))
+}
+
 func Test_get_request(t *testing.T) {
 
     url := ""
@@ -73,6 +82,25 @@ func Test_get_vpc_name(t *testing.T) {
 
     assert.Nil(t, err)
     assert.Equal(t, "fk-helios", vpcName)
+    assert.Equal(t, "http://10.47.255.6:8080/compute/v2/apps/test/zones/zone1/instances/123456", url)
+}
+
+func Test_get_vpc_name_when_not_available(t *testing.T) {
+    url := ""
+    _, client := httpTestTool(200, `{"id":"123456","primary_ip":"10.20.30.40","hostname":"hostname1","version":2627,"app":"test","zone":"zone1","machine_type":"vm"}`, &url)
+
+    meta := &InstanceMetadata{}
+    meta.Id = "123456"
+    meta.App = "test"
+    meta.Zone = "zone1"
+    meta.InstanceGroup = "ig1"
+    meta.Hostname = "hostname1"
+    meta.PrimaryIP = "10.20.30.40"
+
+    vpcName, err := getVpcSubnetName(&client, meta)
+
+    assert.NotNil(t, err)
+    assert.Equal(t, "", vpcName)
     assert.Equal(t, "http://10.47.255.6:8080/compute/v2/apps/test/zones/zone1/instances/123456", url)
 }
 
