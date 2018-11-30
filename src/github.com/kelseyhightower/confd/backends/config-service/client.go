@@ -57,7 +57,13 @@ func (c *Client) GetValues(keys []string) (map[string]string, error) {
 	for _, v := range keys {
 		bucketsKey := strings.Split(strings.TrimPrefix(v, "/"), "/")
 		buckets := strings.Split(bucketsKey[0], ",")
-		key := bucketsKey[1]
+		var key string
+		if len(bucketsKey) >= 2 {
+			key = bucketsKey[1]
+		} else {
+			//when key is not given, fetch all keys
+			key = ""
+		}
 
 		dynamicBuckets, err := c.getDynamicBuckets(buckets)
 		if err != nil {
@@ -66,28 +72,49 @@ func (c *Client) GetValues(keys []string) (map[string]string, error) {
 
 
 		for _, dynamicBucket := range dynamicBuckets {
-			val := dynamicBucket.GetKeys()[key]
-			if val == nil {
-				continue;
-			}
-			valType := reflect.TypeOf(val).Kind()
-			if valType == reflect.Slice {
-				data, err := ffjson.Marshal(val)
-				if err != nil {
-				    log.Error("Failed decoding from JSON")
-				} else {
-					vars[key] = string(data[:])
+			var allKeysInBucket []string
+
+			if key == "" {
+				//when key is empty get all keys in a bucket,
+				bucketKeys := dynamicBucket.GetKeys()
+				allKeysInBucket = []string{}
+				for k, _ := range bucketKeys {
+					//Trim string prifx "/"
+					k = strings.TrimPrefix(k, "/")
+					allKeysInBucket = append(allKeysInBucket, k)
 				}
 			} else {
-				switch val.(type) {
-					case int,int64:
-					vars[key] = strconv.FormatInt(val.(int64), 64)
+				allKeysInBucket = []string{key}
+			}
+
+			//For each key in bucket store value in variable named 'vars'
+			for keyIdx := range allKeysInBucket {
+				keyName := allKeysInBucket[keyIdx]
+
+				val := dynamicBucket.GetKeys()[keyName]
+				if val == nil {
+					continue
+				}
+
+				valType := reflect.TypeOf(val).Kind()
+				if valType == reflect.Slice {
+					data, err := ffjson.Marshal(val)
+					if err != nil {
+						log.Error("Failed decoding from JSON")
+					} else {
+						vars[keyName] = string(data[:])
+					}
+				} else {
+					switch val.(type) {
+					case int, int64:
+						vars[keyName] = strconv.FormatInt(val.(int64), 64)
 					case string:
-					vars[key] = val.(string)
+						vars[keyName] = val.(string)
 					case bool:
-					vars[key] = strconv.FormatBool(val.(bool))
-					case float32,float64:
-					vars[key] = strconv.FormatFloat(val.(float64), 'f', -1, 64)
+						vars[keyName] = strconv.FormatBool(val.(bool))
+					case float32, float64:
+						vars[keyName] = strconv.FormatFloat(val.(float64), 'f', -1, 64)
+					}
 				}
 			}
 		}
