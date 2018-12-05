@@ -60,9 +60,6 @@ func (c *Client) GetValues(keys []string) (map[string]string, error) {
 		var key string
 		if len(bucketsKey) >= 2 {
 			key = bucketsKey[1]
-		} else {
-			//when key is not given, fetch all keys
-			key = ""
 		}
 
 		dynamicBuckets, err := c.getDynamicBuckets(buckets)
@@ -72,26 +69,23 @@ func (c *Client) GetValues(keys []string) (map[string]string, error) {
 
 
 		for _, dynamicBucket := range dynamicBuckets {
-			var allKeysInBucket []string
+			var requestedKeys []string
 
-			if key == "" {
-				//when key is empty get all keys in a bucket,
+			if key == "*" {
+				//when key is "*" get all keys in a bucket,
 				bucketKeys := dynamicBucket.GetKeys()
-				allKeysInBucket = []string{}
+				requestedKeys = []string{}
 				for k, _ := range bucketKeys {
-					//Trim string prifx "/"
-					k = strings.TrimPrefix(k, "/")
-					allKeysInBucket = append(allKeysInBucket, k)
+					requestedKeys = append(requestedKeys, k)
 				}
 			} else {
-				allKeysInBucket = []string{key}
+				requestedKeys = []string{key}
 			}
 
 			//For each key in bucket store value in variable named 'vars'
-			for keyIdx := range allKeysInBucket {
-				keyName := allKeysInBucket[keyIdx]
+			for _, k := range requestedKeys {
 
-				val := dynamicBucket.GetKeys()[keyName]
+				val := dynamicBucket.GetKeys()[k]
 				if val == nil {
 					continue
 				}
@@ -102,18 +96,18 @@ func (c *Client) GetValues(keys []string) (map[string]string, error) {
 					if err != nil {
 						log.Error("Failed decoding from JSON")
 					} else {
-						vars[keyName] = string(data[:])
+						vars[k] = string(data[:])
 					}
 				} else {
 					switch val.(type) {
 					case int, int64:
-						vars[keyName] = strconv.FormatInt(val.(int64), 64)
+						vars[k] = strconv.FormatInt(val.(int64), 64)
 					case string:
-						vars[keyName] = val.(string)
+						vars[k] = val.(string)
 					case bool:
-						vars[keyName] = strconv.FormatBool(val.(bool))
+						vars[k] = strconv.FormatBool(val.(bool))
 					case float32, float64:
-						vars[keyName] = strconv.FormatFloat(val.(float64), 'f', -1, 64)
+						vars[k] = strconv.FormatFloat(val.(float64), 'f', -1, 64)
 					}
 				}
 			}
