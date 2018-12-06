@@ -57,10 +57,7 @@ func (c *Client) GetValues(keys []string) (map[string]string, error) {
 	for _, v := range keys {
 		bucketsKey := strings.Split(strings.TrimPrefix(v, "/"), "/")
 		buckets := strings.Split(bucketsKey[0], ",")
-		var key string
-		if len(bucketsKey) >= 2 {
-			key = bucketsKey[1]
-		}
+		key := bucketsKey[1]
 
 		dynamicBuckets, err := c.getDynamicBuckets(buckets)
 		if err != nil {
