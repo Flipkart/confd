@@ -66,28 +66,46 @@ func (c *Client) GetValues(keys []string) (map[string]string, error) {
 
 
 		for _, dynamicBucket := range dynamicBuckets {
-			val := dynamicBucket.GetKeys()[key]
-			if val == nil {
-				continue;
-			}
-			valType := reflect.TypeOf(val).Kind()
-			if valType == reflect.Slice {
-				data, err := ffjson.Marshal(val)
-				if err != nil {
-				    log.Error("Failed decoding from JSON")
-				} else {
-					vars[key] = string(data[:])
+			var requestedKeys []string
+
+			if key == "*" {
+				//when key is "*" get all keys in a bucket,
+				bucketKeys := dynamicBucket.GetKeys()
+				requestedKeys = []string{}
+				for k, _ := range bucketKeys {
+					requestedKeys = append(requestedKeys, k)
 				}
 			} else {
-				switch val.(type) {
-					case int,int64:
-					vars[key] = strconv.FormatInt(val.(int64), 64)
+				requestedKeys = []string{key}
+			}
+
+			//For each key in bucket store value in variable named 'vars'
+			for _, k := range requestedKeys {
+
+				val := dynamicBucket.GetKeys()[k]
+				if val == nil {
+					continue
+				}
+
+				valType := reflect.TypeOf(val).Kind()
+				if valType == reflect.Slice {
+					data, err := ffjson.Marshal(val)
+					if err != nil {
+						log.Error("Failed decoding from JSON")
+					} else {
+						vars[k] = string(data[:])
+					}
+				} else {
+					switch val.(type) {
+					case int, int64:
+						vars[k] = strconv.FormatInt(val.(int64), 64)
 					case string:
-					vars[key] = val.(string)
+						vars[k] = val.(string)
 					case bool:
-					vars[key] = strconv.FormatBool(val.(bool))
-					case float32,float64:
-					vars[key] = strconv.FormatFloat(val.(float64), 'f', -1, 64)
+						vars[k] = strconv.FormatBool(val.(bool))
+					case float32, float64:
+						vars[k] = strconv.FormatFloat(val.(float64), 'f', -1, 64)
+					}
 				}
 			}
 		}
