@@ -64,7 +64,7 @@ echo "=============== Uploading to Repo-SVC =================="
 reposervice --host repo-svc-app-0001.nm.flipkart.com --port 8080 \
 	pub \
 	--appkey config-service \
-	--repo fk-config-service-confd \
+	--repo fk-config-service-confd-test \
 	--debs $DEB
 
 echo "=============== Cleaning up ==============="
