@@ -79,6 +79,7 @@ var instZoneToCfgsvc = map[string]string{
 	"in-mumbai-preprod-b":    "http://10.85.42.8",
 	"in-mumbai-gateway": "http://10.85.50.3",
 	"in-chennai-1":      "http://10.47.0.101",
+	"in-hyderabad-1": "http://10.24.0.2",
 }
 
 // var skipListForVpcCheck = [...]string{"in-mumbai-preprod", "in-mumbai-preprod-b", "in-mumbai-prod", "in-mumbai-gateway", "#NULL#"}
