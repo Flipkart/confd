@@ -20,23 +20,23 @@ echo "=============== Building! ==================="
 
 pushd /tmp 
 
-	echo "Installing go"
-	if [ ! -d go ]; then
-		wget http://storage.googleapis.com/golang/go1.9.linux-amd64.tar.gz &> /dev/null
-		tar xf go1.9.linux-amd64.tar.gz
-	fi
-    export GOROOT=/tmp/go
-
-	echo "Preparing GOPATH"
-	if [ ! -d gopath ]; then
-		mkdir -p gopath/src
-		mkdir -p gopath/pkg
-		mkdir -p gopath/bin
-	fi
-    export GOPATH=/tmp/gopath
-
-	echo "Fetching gb build tool & export paths"
-    export PATH=$PATH:/tmp/go/bin/
+#	echo "Installing go"
+#	if [ ! -d go ]; then
+#		wget http://storage.googleapis.com/golang/go1.9.linux-amd64.tar.gz &> /dev/null
+#		tar xf go1.9.linux-amd64.tar.gz
+#	fi
+#    export GOROOT=/tmp/go
+#
+#	echo "Preparing GOPATH"
+#	if [ ! -d gopath ]; then
+#		mkdir -p gopath/src
+#		mkdir -p gopath/pkg
+#		mkdir -p gopath/bin
+#	fi
+#    export GOPATH=/tmp/gopath
+#
+#	echo "Fetching gb build tool & export paths"
+#    export PATH=$PATH:/tmp/go/bin/
     go get github.com/constabulary/gb/...
     export PATH=$PATH:$GOPATH/bin
 
@@ -48,7 +48,7 @@ mkdir $DEST && cp -a $PACKAGE/* $DEST
 # build
 mkdir -p $GOPATH/src/github.com/Flipkart/config-service/
 cp -r * $GOPATH/src/github.com/Flipkart/config-service/
-GOOS=linux GOARCH=amd64 GOROOT=/tmp/go ./build
+GOOS=linux GOARCH=amd64 ./build
 
 # copy binary
 mkdir -p $DEST/usr/share/$PACKAGE/bin
